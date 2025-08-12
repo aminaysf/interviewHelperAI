@@ -1,39 +1,59 @@
-import axios, { AxiosError } from "axios";
-import { API_URL } from "@/constants";
-import { getAcessToken } from "@/utilities/storage/secrets";
-const authBaseURL: string = API_URL + "users/auth";
+import axios, { AxiosError } from 'axios';
+import { API_URL } from '@/constants';
+import { getAcessToken } from '@/utilities/storage/secrets';
+
+const authBaseURL = `${API_URL}users/auth`;
 
 export const verifyUserAccessApiCall = async () => {
-  const accessPoint = authBaseURL + "/verify-token"; // Line 11 (where the request is made)
-  const accessToken = await getAcessToken("accessToken");
+  const accessPoint = `${authBaseURL}/verify-token`;
+  const accessToken = await getAcessToken('accessToken');
 
-    return await axios.post(
+  if (!accessToken) {
+    throw new Error('No access token found');
+  }
+
+  try {
+    const response = await axios.post(
       accessPoint,
       {},
       {
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,
         },
       }
-    ).then((res) => {
-      return res;
-    });;
-    
-
+    );
+    return response;
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      console.error('Verify token error:', error.response?.data || error.message);
+      throw error.response?.data || error;
+    }
+    console.error('Unexpected error:', error);
+    throw error;
+  }
 };
+
 export const userLoginApiCall = async (body: {
   password: string;
   account: string;
 }) => {
-  const accessPoint = authBaseURL + "/login";
-  return await axios.post(accessPoint, body, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  }).then((res) => {
-    return res;
-  });
+  const accessPoint = `${authBaseURL}/login`;
+  try {
+    const response = await axios.post(accessPoint, body, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response;
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      console.error('Login error:', error.response?.data || error.message);
+      throw error.response?.data || error;
+    }
+    console.error('Unexpected error:', error);
+    throw error;
+  }
 };
 
 export const userSignupApiCall = async (body: {
@@ -41,12 +61,21 @@ export const userSignupApiCall = async (body: {
   email: string;
   password: string;
 }) => {
-  const accessPoint = authBaseURL + "/signup";
-  return await axios.post(accessPoint, body, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  }).then((res) => {
-    return res;
-  });
+  const accessPoint = `${authBaseURL}/signup`;
+  try {
+    const response = await axios.post(accessPoint, body, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    localStorage.setItem('accessToken', response.data.token); // Store token
+    return response;
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      console.error('Signup error:', error.response?.data || error.message);
+      throw error.response?.data || error;
+    }
+    console.error('Unexpected error:', error);
+    throw error;
+  }
 };
